@@ -12,13 +12,13 @@ produced like this:
 
     pip install --target ./package requests
 	cd package/
-	zip -r ../deployment-package.zip .
+	zip -r ../deployment-package-`git rev-parse --short HEAD`.zip .
 	cd ..
-	zip -g deployment-package.zip lambda_function.py
+	zip -g deployment-package-`git rev-parse --short HEAD`.zip lambda_function.py
 
-Now you can upload `deployment-package.zip`, set the environment
-variables `PORTS_LIST` and `SECURITY_GROUP_ID`, and set up an
-EventBridge or other trigger.
+Now you can upload `deployment-package-80b467a.zip` (or whatever it
+is), set the environment variables `PORTS_LIST` and
+`SECURITY_GROUP_ID`, and set up an EventBridge or other trigger.
 
 Source(s) of truth
 ------------------
