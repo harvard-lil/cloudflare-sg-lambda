@@ -27,3 +27,10 @@ This code uses https://api.cloudflare.com/client/v4/ips; as of April
 13, 2021, this URL has not caught up with
 https://www.cloudflare.com/ips/, which contains a change announced on
 April 8, to be made on May 7. 
+
+A variant
+---------
+
+This repo contains [a variant](lambda_function_urllib.py) that uses
+`urllib` instead of `requests`, and so does not need to be packaged in
+the same way.
