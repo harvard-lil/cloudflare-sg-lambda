@@ -9,7 +9,7 @@ def get_cloudflare_ip_list():
     temp = response.json()
     if 'result' in temp:
         return temp['result']
-    raise Exception("Cloudflare response error")
+    raise Exception('Cloudflare response error')
 
 
 def get_aws_security_group(group_id):
@@ -36,7 +36,7 @@ def add_ipv4_rule(group, address, port):
                             CidrIp=address,
                             FromPort=port,
                             ToPort=port)
-    print("Added %s : %i  " % (address, port))
+    print(f'Added {address} : {port}  ')
 
 
 def delete_ipv4_rule(group, address, port):
@@ -45,7 +45,7 @@ def delete_ipv4_rule(group, address, port):
                          CidrIp=address,
                          FromPort=port,
                          ToPort=port)
-    print("Removed %s : %i  " % (address, port))
+    print(f'Removed {address} : {port}  ')
 
 
 def check_ipv6_rule_exists(rules, address, port):
@@ -69,7 +69,7 @@ def add_ipv6_rule(group, address, port):
             },
         ]
     }])
-    print("Added %s : %i  " % (address, port))
+    print(f'Added {address} : {port}  ')
 
 
 def delete_ipv6_rule(group, address, port):
@@ -84,7 +84,7 @@ def delete_ipv6_rule(group, address, port):
             },
         ]
     }])
-    print("Removed %s : %i  " % (address, port))
+    print(f'Removed {address} : {port}  ')
 
 
 def lambda_handler(event, context):
