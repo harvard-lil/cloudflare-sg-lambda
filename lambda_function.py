@@ -103,7 +103,7 @@ def lambda_handler(event, context):
         changes['remove'][p] = sg_sets[p] - cf_sets[p]
 
     for action in changes.keys():
-        for tup in changes[action]['ipv4']:
-            change_ipv4_rule(action, security_group, tup[0], tup[1])
-        for tup in changes[action]['ipv6']:
-            change_ipv6_rule(action, security_group, tup[0], tup[1])
+        for cidr, port in changes[action]['ipv4']:
+            change_ipv4_rule(action, security_group, cidr, port)
+        for cidr, port in changes[action]['ipv6']:
+            change_ipv6_rule(action, security_group, cidr, port)
