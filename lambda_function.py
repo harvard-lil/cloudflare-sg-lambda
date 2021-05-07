@@ -9,13 +9,11 @@ logger.setLevel(logging.INFO)
 
 
 def get_cloudflare_ip_list():
-    """ Call the CloudFlare API and return a list of IPs """
+    """ Call the Cloudflare API and return a list of IPs """
     response = requests.get('https://api.cloudflare.com/client/v4/ips')
     temp = response.json()
     if 'result' in temp:
-        ips = temp['result']
-        logger.info(f'Got {len(ips["ipv4_cidrs"])} IPv4 CIDRs and {len(ips["ipv6_cidrs"])} IPv6 CIDRs from Cloudflare')
-        return ips
+        return temp['result']
     raise Exception('Cloudflare response error')
 
 
@@ -111,6 +109,7 @@ def lambda_handler(event, context):
         logger.info(f"Rule for port {rule['FromPort']} has {len(rule['IpRanges'])} IPv4 ranges and {len(rule['Ipv6Ranges'])} IPv6 ranges")
 
     ip_addresses = get_cloudflare_ip_list()
+    logger.info(f'Got {len(ip_addresses["ipv4_cidrs"])} IPv4 CIDRs and {len(ip_addresses["ipv6_cidrs"])} IPv6 CIDRs from Cloudflare')
 
     ## IPv4
     # add new addresses
