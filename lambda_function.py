@@ -77,19 +77,21 @@ def lambda_handler(event, context):
 
     cf = get_cloudflare_ip_list()
 
-    cf_sets = {}
-    for p in protocols:
-        cf_sets[p] = {(cidr, port)
-                      for cidr in cf[f'{p}_cidrs']
-                      for port in ports}
+    cf_sets = {
+        p: {(cidr, port)
+            for cidr in cf[f'{p}_cidrs']
+            for port in ports}
+        for p in protocols
+    }
 
-    sg_sets = {}
-    sg_sets['ipv4'] = {(ip_range['CidrIp'], rule['FromPort'])
-                       for rule in rules
-                       for ip_range in rule['IpRanges']}
-    sg_sets['ipv6'] = {(ip_range['CidrIpv6'], rule['FromPort'])
-                       for rule in rules
-                       for ip_range in rule['Ipv6Ranges']}
+    sg_sets = {
+        'ipv4': {(ip_range['CidrIp'], rule['FromPort'])
+                 for rule in rules
+                 for ip_range in rule['IpRanges']},
+        'ipv6': {(ip_range['CidrIpv6'], rule['FromPort'])
+                 for rule in rules
+                 for ip_range in rule['Ipv6Ranges']}
+    }
 
     changes = {
         'add': {},
