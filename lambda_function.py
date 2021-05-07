@@ -97,9 +97,7 @@ def lambda_handler(event, context):
 
     cf_sets = {}
     for p in protocols:
-        cf_sets[p] = {(cidr, port)
-                      for cidr in cf[f'{p}_cidrs']
-                      for port in ports}
+        cf_sets[p] = {(cidr, port) for cidr in cf[f'{p}_cidrs'] for port in ports}
 
     sg_sets = {}
     sg_sets['ipv4'] = {(ip_range['CidrIp'], rule['FromPort'])
