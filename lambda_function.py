@@ -41,6 +41,7 @@ def check_ipv4_rule_exists(rules, address, port):
 
 def add_ipv4_rule(group, address, port):
     """ Add the IP address/port to the security group """
+    logger.info(f'Adding {address} : {port}  ')
     group.authorize_ingress(IpProtocol="tcp",
                             CidrIp=address,
                             FromPort=port,
@@ -114,8 +115,8 @@ def lambda_handler(event, context):
     ## IPv4
     # add new addresses
     for ipv4_cidr in ip_addresses['ipv4_cidrs']:
-        logger.info(f'Checking {ipv4_cidr} for addition')
         for port in ports:
+            logger.info(f'Checking {ipv4_cidr}:{port} for addition')
             if not check_ipv4_rule_exists(current_rules, ipv4_cidr, port):
                 add_ipv4_rule(security_group, ipv4_cidr, port)
 
@@ -125,7 +126,7 @@ def lambda_handler(event, context):
             # is it necessary/correct to check both From and To?
             if rule['FromPort'] == port and rule['ToPort'] == port:
                 for ip_range in rule['IpRanges']:
-                    logger.info(f'Checking {ip_range} for deletion')
+                    logger.info(f'Checking {ip_range}:{port} for deletion')
                     if ip_range['CidrIp'] not in ip_addresses['ipv4_cidrs']:
                         delete_ipv4_rule(security_group, ip_range['CidrIp'], port)
 
