@@ -110,8 +110,6 @@ def lambda_handler(event, context):
 
     for action in changes.keys():
         for tup in changes[action]['ipv4']:
-            logger.info(f'I would {action} {tup[0]} on {tup[1]}')
-            # change_ipv4_rule(action, security_group, tup[0], tup[1])
+            change_ipv4_rule(action, security_group, tup[0], tup[1])
         for tup in changes[action]['ipv6']:
-            logger.info(f'I would {action} {tup[0]} on {tup[1]}')
-            # change_ipv6_rule(action, security_group, tup[0], tup[1])
+            change_ipv6_rule(action, security_group, tup[0], tup[1])
