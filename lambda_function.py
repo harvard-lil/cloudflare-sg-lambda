@@ -1,6 +1,11 @@
 import os
 import boto3
 import requests
+import logging
+
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 
 def get_cloudflare_ip_list():
@@ -8,7 +13,9 @@ def get_cloudflare_ip_list():
     response = requests.get('https://api.cloudflare.com/client/v4/ips')
     temp = response.json()
     if 'result' in temp:
-        return temp['result']
+        ips = temp['result']
+        logger.info(f'Got {len(ips["ipv4_cidrs"])} IPv4 CIDRs and {len(ips["ipv6_cidrs"])} IPv6 CIDRs')
+        return ips
     raise Exception('Cloudflare response error')
 
 
@@ -36,7 +43,7 @@ def add_ipv4_rule(group, address, port):
                             CidrIp=address,
                             FromPort=port,
                             ToPort=port)
-    print(f'Added {address} : {port}  ')
+    logger.info(f'Added {address} : {port}  ')
 
 
 def delete_ipv4_rule(group, address, port):
@@ -45,7 +52,7 @@ def delete_ipv4_rule(group, address, port):
                          CidrIp=address,
                          FromPort=port,
                          ToPort=port)
-    print(f'Removed {address} : {port}  ')
+    logger.info(f'Removed {address} : {port}  ')
 
 
 def check_ipv6_rule_exists(rules, address, port):
@@ -69,7 +76,7 @@ def add_ipv6_rule(group, address, port):
             },
         ]
     }])
-    print(f'Added {address} : {port}  ')
+    logger.info(f'Added {address} : {port}  ')
 
 
 def delete_ipv6_rule(group, address, port):
@@ -84,7 +91,7 @@ def delete_ipv6_rule(group, address, port):
             },
         ]
     }])
-    print(f'Removed {address} : {port}  ')
+    logger.info(f'Removed {address} : {port}  ')
 
 
 def lambda_handler(event, context):
