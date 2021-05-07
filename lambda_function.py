@@ -97,8 +97,8 @@ def lambda_handler(event, context):
     }
 
     for p in protocols:
-        changes['add'][p] = cf_sets[p].difference(sg_sets[p])
-        changes['remove'][p] = sg_sets[p].difference(cf_sets[p])
+        changes['add'][p] = cf_sets[p] - sg_sets[p]
+        changes['remove'][p] = sg_sets[p] - cf_sets[p]
 
     for action in changes.keys():
         for tup in changes[action]['ipv4']:
