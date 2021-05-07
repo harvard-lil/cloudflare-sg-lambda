@@ -28,16 +28,16 @@ def get_aws_security_group(group_id):
 
 def change_ipv4_rule(action, group, address, port):
     """ Add/remove the IP address/port to/from the security group """
+    kwargs = {
+        'IpProtocol': 'tcp',
+        'CidrIp': address,
+        'FromPort': port,
+        'ToPort': port
+    }
     if action == 'add':
-        group.authorize_ingress(IpProtocol="tcp",
-                                CidrIp=address,
-                                FromPort=port,
-                                ToPort=port)
+        group.authorize_ingress(**kwargs)
     elif action == 'remove':
-        group.revoke_ingress(IpProtocol="tcp",
-                             CidrIp=address,
-                             FromPort=port,
-                             ToPort=port)
+        group.revoke_ingress(**kwargs)
     else:
         raise Exception('Invalid action')
     logger.info(f'{action}: {address}:{port}')
@@ -46,29 +46,21 @@ def change_ipv4_rule(action, group, address, port):
 def change_ipv6_rule(action, group, address, port):
     """ Add/remove the IP address/port to/from the security group """
     if action == 'add':
-        group.authorize_ingress(IpPermissions=[{
-            'IpProtocol': "tcp",
-            'FromPort': port,
-            'ToPort': port,
-            'Ipv6Ranges': [
-                {
-                    'CidrIpv6': address
-                },
-            ]
-        }])
+        func = group.authorize_ingress
     elif action == 'remove':
-        group.revoke_ingress(IpPermissions=[{
-            'IpProtocol': "tcp",
-            'FromPort': port,
-            'ToPort': port,
-            'Ipv6Ranges': [
-                {
-                    'CidrIpv6': address
-                },
-            ]
-        }])
+        func = group.revoke_ingress
     else:
         raise Exception('Invalid action')
+    func(IpPermissions=[{
+        'IpProtocol': "tcp",
+        'FromPort': port,
+        'ToPort': port,
+        'Ipv6Ranges': [
+            {
+                'CidrIpv6': address
+            },
+        ]
+    }])
     logger.info(f'{action}: {address}:{port}')
 
 
