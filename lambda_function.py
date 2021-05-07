@@ -22,58 +22,54 @@ def get_aws_security_group(group_id):
     ec2 = boto3.resource('ec2')
     group = ec2.SecurityGroup(group_id)
     if group.group_id == group_id:
-        logger.info(f'Got security group {group_id}')
         return group
     raise Exception('Failed to retrieve Security Group')
 
 
-def add_ipv4_rule(group, address, port):
-    """ Add the IP address/port to the security group """
-    logger.info(f'Adding {address} : {port}  ')
-    group.authorize_ingress(IpProtocol="tcp",
-                            CidrIp=address,
-                            FromPort=port,
-                            ToPort=port)
-    logger.info(f'Added {address} : {port}  ')
+def change_ipv4_rule(action, group, address, port):
+    """ Add/remove the IP address/port to/from the security group """
+    if action == 'add':
+        group.authorize_ingress(IpProtocol="tcp",
+                                CidrIp=address,
+                                FromPort=port,
+                                ToPort=port)
+    elif action == 'remove':
+        group.revoke_ingress(IpProtocol="tcp",
+                             CidrIp=address,
+                             FromPort=port,
+                             ToPort=port)
+    else:
+        raise Exception('Invalid action')
+    logger.info(f'{action}: {address}:{port}')
 
 
-def delete_ipv4_rule(group, address, port):
-    """ Remove the IP address/port from the security group """
-    group.revoke_ingress(IpProtocol="tcp",
-                         CidrIp=address,
-                         FromPort=port,
-                         ToPort=port)
-    logger.info(f'Removed {address} : {port}  ')
-
-
-def add_ipv6_rule(group, address, port):
-    """ Add the IP address/port to the security group """
-    group.authorize_ingress(IpPermissions=[{
-        'IpProtocol': "tcp",
-        'FromPort': port,
-        'ToPort': port,
-        'Ipv6Ranges': [
-            {
-                'CidrIpv6': address
-            },
-        ]
-    }])
-    logger.info(f'Added {address} : {port}  ')
-
-
-def delete_ipv6_rule(group, address, port):
-    """ Remove the IP address/port from the security group """
-    group.revoke_ingress(IpPermissions=[{
-        'IpProtocol': "tcp",
-        'FromPort': port,
-        'ToPort': port,
-        'Ipv6Ranges': [
-            {
-                'CidrIpv6': address
-            },
-        ]
-    }])
-    logger.info(f'Removed {address} : {port}  ')
+def change_ipv6_rule(action, group, address, port):
+    """ Add/remove the IP address/port to/from the security group """
+    if action == 'add':
+        group.authorize_ingress(IpPermissions=[{
+            'IpProtocol': "tcp",
+            'FromPort': port,
+            'ToPort': port,
+            'Ipv6Ranges': [
+                {
+                    'CidrIpv6': address
+                },
+            ]
+        }])
+    elif action == 'remove':
+        group.revoke_ingress(IpPermissions=[{
+            'IpProtocol': "tcp",
+            'FromPort': port,
+            'ToPort': port,
+            'Ipv6Ranges': [
+                {
+                    'CidrIpv6': address
+                },
+            ]
+        }])
+    else:
+        raise Exception('Invalid action')
+    logger.info(f'{action}: {address}:{port}')
 
 
 def lambda_handler(event, context):
@@ -83,21 +79,17 @@ def lambda_handler(event, context):
     ports = list(map(int, os.environ['PORTS_LIST'].split(",")))
     if not ports:
         ports = [80]
-    logger.info(f'Using ports {", ".join(map(str, ports))}')
 
     security_group = get_aws_security_group(os.environ['SECURITY_GROUP_ID'])
     rules = security_group.ip_permissions
-    for rule in rules:
-        logger.info(f"Rule for port {rule['FromPort']} has {len(rule['IpRanges'])} IPv4 ranges and {len(rule['Ipv6Ranges'])} IPv6 ranges")  # noqa
 
     cf = get_cloudflare_ip_list()
-    for p in protocols:
-        key = f'{p}_cidrs'
-        logger.info(f'Got {len(cf[key])} {p} CIDRs from Cloudflare')
 
     cf_sets = {}
     for p in protocols:
-        cf_sets[p] = {(cidr, port) for cidr in cf[f'{p}_cidrs'] for port in ports}
+        cf_sets[p] = {(cidr, port)
+                      for cidr in cf[f'{p}_cidrs']
+                      for port in ports}
 
     sg_sets = {}
     sg_sets['ipv4'] = {(ip_range['CidrIp'], rule['FromPort'])
@@ -113,14 +105,13 @@ def lambda_handler(event, context):
     }
 
     for p in protocols:
-        logger.info(f'{len(cf_sets[p])} {p} CIDRs in Cloudflare set')
-        logger.info(f'{len(sg_sets[p])} {p} CIDRs in security group set')
-
         changes['add'][p] = cf_sets[p].difference(sg_sets[p])
         changes['remove'][p] = sg_sets[p].difference(cf_sets[p])
 
-    for action in ['add', 'remove']:
-        for p in protocols:
-            logger.info(f'{len(changes[action][p])} {p} CIDRs in {action} set')
-            for tup in changes[action][p]:
-                logger.info(f'I would {action} {tup[0]} on {tup[1]}')
+    for action in changes.keys():
+        for tup in changes[action]['ipv4']:
+            logger.info(f'I would {action} {tup[0]} on {tup[1]}')
+            # change_ipv4_rule(action, security_group, tup[0], tup[1])
+        for tup in changes[action]['ipv6']:
+            logger.info(f'I would {action} {tup[0]} on {tup[1]}')
+            # change_ipv6_rule(action, security_group, tup[0], tup[1])
