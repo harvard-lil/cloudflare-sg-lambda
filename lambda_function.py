@@ -80,7 +80,7 @@ def lambda_handler(event, context):
     """ AWS Lambda main function """
     protocols = ['ipv4', 'ipv6']
 
-    ports = map(int, os.environ['PORTS_LIST'].split(","))
+    ports = list(map(int, os.environ['PORTS_LIST'].split(",")))
     if not ports:
         ports = [80]
     logger.info(f'Using ports {", ".join(map(str, ports))}')
