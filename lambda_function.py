@@ -14,7 +14,7 @@ def get_cloudflare_ip_list():
     temp = response.json()
     if 'result' in temp:
         ips = temp['result']
-        logger.info(f'Got {len(ips["ipv4_cidrs"])} IPv4 CIDRs and {len(ips["ipv6_cidrs"])} IPv6 CIDRs')
+        logger.info(f'Got {len(ips["ipv4_cidrs"])} IPv4 CIDRs and {len(ips["ipv6_cidrs"])} IPv6 CIDRs from Cloudflare')
         return ips
     raise Exception('Cloudflare response error')
 
@@ -35,6 +35,7 @@ def check_ipv4_rule_exists(rules, address, port):
         for ip_range in rule['IpRanges']:
             if ip_range['CidrIp'] == address and rule['FromPort'] == port:
                 return True
+    logger.info(f'No rule exists for {address} on port {port}')
     return False
 
 
@@ -62,6 +63,7 @@ def check_ipv6_rule_exists(rules, address, port):
         for ip_range in rule['Ipv6Ranges']:
             if ip_range['CidrIpv6'] == address and rule['FromPort'] == port:
                 return True
+    logger.info(f'No rule exists for {address} on port {port}')
     return False
 
 
