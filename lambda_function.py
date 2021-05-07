@@ -93,10 +93,7 @@ def lambda_handler(event, context):
                  for ip_range in rule['Ipv6Ranges']}
     }
 
-    changes = {
-        'add': {},
-        'remove': {}
-    }
+    changes = {k: {} for k in ['add', 'remove']}
 
     for p in protocols:
         changes['add'][p] = cf_sets[p] - sg_sets[p]
