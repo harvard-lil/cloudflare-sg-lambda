@@ -16,6 +16,8 @@ produced like this:
     cd ..
     zip -g deployment-package-`git rev-parse --short HEAD`.zip lambda_function.py
 
+(These lines are included in [package.sh](package.sh) for convenience.)
+
 Now you can upload `deployment-package-80b467a.zip` (or whatever it
 is), set the environment variables `PORTS_LIST` and
 `SECURITY_GROUP_ID`, and set up an EventBridge or other trigger.
