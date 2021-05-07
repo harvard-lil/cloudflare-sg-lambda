@@ -11,10 +11,10 @@ logger.setLevel(logging.INFO)
 def get_cloudflare_ip_list():
     """ Call the Cloudflare API and return a list of IPs """
     response = requests.get('https://api.cloudflare.com/client/v4/ips')
-    temp = response.json()
-    if 'result' in temp:
-        return temp['result']
-    raise Exception('Cloudflare response error')
+    try:
+        return response.json()['result']
+    except KeyError:
+        raise Exception('Cloudflare response error')
 
 
 def get_aws_security_group(group_id):
