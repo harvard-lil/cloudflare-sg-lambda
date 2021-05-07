@@ -24,6 +24,7 @@ def get_aws_security_group(group_id):
     ec2 = boto3.resource('ec2')
     group = ec2.SecurityGroup(group_id)
     if group.group_id == group_id:
+        logger.info(f'Got security group {group_id}')
         return group
     raise Exception('Failed to retrieve Security Group')
 
@@ -99,9 +100,12 @@ def lambda_handler(event, context):
     ports = map(int, os.environ['PORTS_LIST'].split(","))
     if not ports:
         ports = [80]
+    logger.info(f'Using ports {", ".join(map(str, ports))}')
 
     security_group = get_aws_security_group(os.environ['SECURITY_GROUP_ID'])
     current_rules = security_group.ip_permissions
+    logger.info(f'SG has {len(current_rules)} rules')
+
     ip_addresses = get_cloudflare_ip_list()
 
     ## IPv4
