@@ -91,7 +91,9 @@ def lambda_handler(event, context):
         logger.info(f"Rule for port {rule['FromPort']} has {len(rule['IpRanges'])} IPv4 ranges and {len(rule['Ipv6Ranges'])} IPv6 ranges")  # noqa
 
     cf = get_cloudflare_ip_list()
-    logger.info(f'Got {len(cf["ipv4_cidrs"])} IPv4 CIDRs and {len(cf["ipv6_cidrs"])} IPv6 CIDRs from Cloudflare')  # noqa
+    for p in protocols:
+        key = f'{p}_cidrs'
+        logger.info(f'Got {len(cf[key])} {p} CIDRs from Cloudflare')
 
     cf_sets = {}
     for p in protocols:
@@ -113,10 +115,14 @@ def lambda_handler(event, context):
     }
 
     for p in protocols:
+        logger.info(f'{len(cf_sets[p]))} {p} CIDRs in Cloudflare set')
+        logger.info(f'{len(sg_sets[p]))} {p} CIDRs in security group set')
+
         changes['add'][p] = cf_sets[p].difference(sg_sets[p])
         changes['remove'][p] = sg_sets[p].difference(cf_sets[p])
 
     for action in ['add', 'remove']:
         for p in protocols:
+            logger.info(f'{len(changes[action][p])} {p} CIDRs in {action} set')
             for tup in changes[action][p]:
                 logger.info(f'I would {action} {tup[0]} on {tup[1]}')
