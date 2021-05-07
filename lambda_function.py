@@ -105,10 +105,7 @@ def lambda_handler(event, context):
     security_group = get_aws_security_group(os.environ['SECURITY_GROUP_ID'])
     current_rules = security_group.ip_permissions
     for rule in current_rules:
-        port = current_rules[rule]['FromPort']
-        ipv4 = len(current_rules[rule]['IpRanges'])
-        ipv6 = len(current_rules[rule]['Ipv6Ranges'])
-        logger.info(f'Rule for port {port} has {ipv4} IPv4 ranges and {ipv6} IPv6 ranges')
+        logger.info(f"Rule for port {rule['FromPort']} has {len(rule['IpRanges'])} IPv4 ranges and {len(rule['Ipv6Ranges'])} IPv6 ranges")
 
     ip_addresses = get_cloudflare_ip_list()
 
