@@ -27,16 +27,6 @@ def get_aws_security_group(group_id):
     raise Exception('Failed to retrieve Security Group')
 
 
-def check_ipv4_rule_exists(rules, address, port):
-    """ Check if the rule currently exists """
-    for rule in rules:
-        for ip_range in rule['IpRanges']:
-            if ip_range['CidrIp'] == address and rule['FromPort'] == port:
-                return True
-    logger.info(f'No rule exists for {address} on port {port}')
-    return False
-
-
 def add_ipv4_rule(group, address, port):
     """ Add the IP address/port to the security group """
     logger.info(f'Adding {address} : {port}  ')
@@ -54,16 +44,6 @@ def delete_ipv4_rule(group, address, port):
                          FromPort=port,
                          ToPort=port)
     logger.info(f'Removed {address} : {port}  ')
-
-
-def check_ipv6_rule_exists(rules, address, port):
-    """ Check if the rule currently exists """
-    for rule in rules:
-        for ip_range in rule['Ipv6Ranges']:
-            if ip_range['CidrIpv6'] == address and rule['FromPort'] == port:
-                return True
-    logger.info(f'No rule exists for {address} on port {port}')
-    return False
 
 
 def add_ipv6_rule(group, address, port):
@@ -98,47 +78,45 @@ def delete_ipv6_rule(group, address, port):
 
 def lambda_handler(event, context):
     """ AWS Lambda main function """
+    protocols = ['ipv4', 'ipv6']
+
     ports = map(int, os.environ['PORTS_LIST'].split(","))
     if not ports:
         ports = [80]
     logger.info(f'Using ports {", ".join(map(str, ports))}')
 
     security_group = get_aws_security_group(os.environ['SECURITY_GROUP_ID'])
-    current_rules = security_group.ip_permissions
-    for rule in current_rules:
-        logger.info(f"Rule for port {rule['FromPort']} has {len(rule['IpRanges'])} IPv4 ranges and {len(rule['Ipv6Ranges'])} IPv6 ranges")
+    rules = security_group.ip_permissions
+    for rule in rules:
+        logger.info(f"Rule for port {rule['FromPort']} has {len(rule['IpRanges'])} IPv4 ranges and {len(rule['Ipv6Ranges'])} IPv6 ranges")  # noqa
 
-    ip_addresses = get_cloudflare_ip_list()
-    logger.info(f'Got {len(ip_addresses["ipv4_cidrs"])} IPv4 CIDRs and {len(ip_addresses["ipv6_cidrs"])} IPv6 CIDRs from Cloudflare')
+    cf = get_cloudflare_ip_list()
+    logger.info(f'Got {len(cf["ipv4_cidrs"])} IPv4 CIDRs and {len(cf["ipv6_cidrs"])} IPv6 CIDRs from Cloudflare')  # noqa
 
-    ## IPv4
-    # add new addresses
-    for ipv4_cidr in ip_addresses['ipv4_cidrs']:
-        for port in ports:
-            logger.info(f'Checking {ipv4_cidr} on port {port} for addition')
-            if not check_ipv4_rule_exists(current_rules, ipv4_cidr, port):
-                add_ipv4_rule(security_group, ipv4_cidr, port)
+    cf_sets = {}
+    for p in protocols:
+        cf_sets[p] = {(cidr, port)
+                      for cidr in cf['protocol']
+                      for port in ports}
 
-    # remove old addresses
-    for port in ports:
-        for rule in current_rules:
-            # is it necessary/correct to check both From and To?
-            if rule['FromPort'] == port and rule['ToPort'] == port:
-                for ip_range in rule['IpRanges']:
-                    logger.info(f'Checking {ip_range}:{port} for deletion')
-                    if ip_range['CidrIp'] not in ip_addresses['ipv4_cidrs']:
-                        delete_ipv4_rule(security_group, ip_range['CidrIp'], port)
+    sg_sets = {}
+    sg_sets['ipv4'] = {(ip_range['CidrIp'], rule['FromPort'])
+                       for rule in rules
+                       for ip_range in rule['IpRanges']}
+    sg_sets['ipv6'] = {(ip_range['CidrIpv6'], rule['FromPort'])
+                       for rule in rules
+                       for ip_range in rule['Ipv6Ranges']}
 
-    ## IPv6 -- because of boto3 syntax, this has to be separate
-    # add new addresses
-    for ipv6_cidr in ip_addresses['ipv6_cidrs']:
-        for port in ports:
-            if not check_ipv6_rule_exists(current_rules, ipv6_cidr, port):
-                add_ipv6_rule(security_group, ipv6_cidr, port)
+    changes = {
+        'add': {},
+        'remove': {}
+    }
 
-    # remove old addresses
-    for port in ports:
-        for rule in current_rules:
-            for ip_range in rule['Ipv6Ranges']:
-                if ip_range['CidrIpv6'] not in ip_addresses['ipv6_cidrs'] and port == ip_range['FromPort']:
-                    delete_ipv6_rule(security_group, ip_range['CidrIpv6'], port)
+    for p in protocols:
+        changes['add'][p] = cf_sets[p].difference(sg_sets[p])
+        changes['remove'][p] = sg_sets[p].difference(cf_sets[p])
+
+    for action in ['add', 'remove']:
+        for p in protocols:
+            for tup in changes[action][p]:
+                logger.info(f'I would {action} {tup[0]} on {tup[1]}')
