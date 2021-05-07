@@ -115,7 +115,7 @@ def lambda_handler(event, context):
     # add new addresses
     for ipv4_cidr in ip_addresses['ipv4_cidrs']:
         for port in ports:
-            logger.info(f'Checking {ipv4_cidr}:{port} for addition')
+            logger.info(f'Checking {ipv4_cidr} on port {port} for addition')
             if not check_ipv4_rule_exists(current_rules, ipv4_cidr, port):
                 add_ipv4_rule(security_group, ipv4_cidr, port)
 
