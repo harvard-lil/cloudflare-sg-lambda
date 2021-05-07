@@ -115,8 +115,8 @@ def lambda_handler(event, context):
     }
 
     for p in protocols:
-        logger.info(f'{len(cf_sets[p]))} {p} CIDRs in Cloudflare set')
-        logger.info(f'{len(sg_sets[p]))} {p} CIDRs in security group set')
+        logger.info(f'{len(cf_sets[p])} {p} CIDRs in Cloudflare set')
+        logger.info(f'{len(sg_sets[p])} {p} CIDRs in security group set')
 
         changes['add'][p] = cf_sets[p].difference(sg_sets[p])
         changes['remove'][p] = sg_sets[p].difference(cf_sets[p])
