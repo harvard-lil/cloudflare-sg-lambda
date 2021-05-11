@@ -24,9 +24,8 @@ is), set the environment variables `PORTS_LIST` and
 
 This system now uses [Poetry](https://python-poetry.org/) to manage
 requirements. Get set up for development by running `poetry install`;
-now you can run `poetry run flake8 lambda_function.py` or `poetry run
-pytest`. To pin requirements, after, for instance, upgrading
-`requests`, run
+now you can run `poetry run pytest`. To pin requirements after adding
+or upgrading a package, run
 
     poetry export > requirements.txt
 
