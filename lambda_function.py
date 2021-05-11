@@ -64,22 +64,18 @@ def change_ipv6_rule(action, group, address, port):
     logger.info(f'{action}: {address}:{port}')
 
 
-def lambda_handler(event, context):
-    """ AWS Lambda main function """
+def determine_changes(cloudflare_cidrs, rules):
+    """ Compare rules in an SG with CIDRs from the Cloudflare API """
     protocols = ['ipv4', 'ipv6']
 
-    ports = list(map(int, os.environ['PORTS_LIST'].split(",")))
-    if not ports:
+    try:
+        ports = list(map(int, os.environ['PORTS_LIST'].split(",")))
+    except KeyError:
         ports = [80]
-
-    security_group = get_aws_security_group(os.environ['SECURITY_GROUP_ID'])
-    rules = security_group.ip_permissions
-
-    cf = get_cloudflare_ip_list()
 
     cf_sets = {
         p: {(cidr, port)
-            for cidr in cf[f'{p}_cidrs']
+            for cidr in cloudflare_cidrs[f'{p}_cidrs']
             for port in ports}
         for p in protocols
     }
@@ -98,6 +94,18 @@ def lambda_handler(event, context):
     for p in protocols:
         changes['add'][p] = cf_sets[p] - sg_sets[p]
         changes['remove'][p] = sg_sets[p] - cf_sets[p]
+
+    return changes
+
+
+def lambda_handler(event, context):
+    """ AWS Lambda main function """
+    security_group = get_aws_security_group(os.environ['SECURITY_GROUP_ID'])
+    rules = security_group.ip_permissions
+
+    cloudflare_cidrs = get_cloudflare_ip_list()
+
+    changes = determine_changes(cloudflare_cidrs, rules)
 
     for action in changes.keys():
         for cidr, port in changes[action]['ipv4']:

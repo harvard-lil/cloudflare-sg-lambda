@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "cloudflare-sg-lambda"
+version = "0.1.0"
+description = ""
+authors = ["Ben Steinberg <bsteinberg@law.harvard.edu>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+boto3 = "^1.17.70"
+requests = "^2.25.1"
+
+[tool.poetry.dev-dependencies]
+flake8 = "^3.9.2"
+pytest = "^6.2.4"
+pytest-flake8 = "^1.0.7"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

@@ -22,9 +22,13 @@ Now you can upload `deployment-package-80b467a.zip` (or whatever it
 is), set the environment variables `PORTS_LIST` and
 `SECURITY_GROUP_ID`, and set up an EventBridge or other trigger.
 
-To pin requirements, after, for instance, upgrading requests, run
+This system now uses [Poetry](https://python-poetry.org/) to manage
+requirements. Get set up for development by running `poetry install`;
+now you can run `poetry run flake8 lambda_function.py` or `poetry run
+pytest`. To pin requirements, after, for instance, upgrading
+`requests`, run
 
-    pip freeze --path package/ > requirements.txt
+    poetry export > requirements.txt
 
 Source(s) of truth
 ------------------
@@ -33,10 +37,3 @@ This code uses https://api.cloudflare.com/client/v4/ips; as of April
 13, 2021, this URL has not caught up with
 https://www.cloudflare.com/ips/, which contains a change announced on
 April 8, to be made on May 7. 
-
-A variant
----------
-
-This repo contains [a variant](lambda_function_urllib.py) that uses
-`urllib` instead of `requests`, and so does not need to be packaged in
-the same way.
